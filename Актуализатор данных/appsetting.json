@@ -1,0 +1,26 @@
+{
+    "ParentDatabase": {
+        "ConnectionString": "Host=your_host;Port=5432;Database=parent_db;Username=user;Password=password;",
+        "Schema": "Schema0"
+    },
+    "ChildDatabases": [
+        {
+            "ConnectionString": "Host=your_host;Port=5432;Database=child_db1;Username=user;Password=password;",
+            "Schema": "Schema1",
+            "Tables": [
+                "table1",
+                "table2",
+                "table3"
+            ]
+        },
+        {
+            "ConnectionString": "Host=your_host;Port=5432;Database=child_db2;Username=user;Password=password;",
+            "Schema": "Schema2",
+            "Tables": [
+                "tableA",
+                "tableB",
+                "tableC"
+            ]
+        }
+    ]
+}
