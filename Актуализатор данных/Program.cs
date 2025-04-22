@@ -85,13 +85,13 @@ namespace Актуализатор_данных
             return conn;
         }
         public DataTable GetValues(NpgsqlConnection conn, string tableName, List<string> columns)
-        {
+        {            
             string query = $"SELECT \"{string.Join("\", \"", columns)}\" FROM {tableName}";
             using var cmd = new NpgsqlCommand(query, conn);
             using var reader = cmd.ExecuteReader();
             DataTable table = new DataTable();
             table.Load(reader);
-            return table;
+            return table;            
         }
     }
     
@@ -125,8 +125,10 @@ namespace Актуализатор_данных
             string ProgramPath = Environment.CurrentDirectory;
             if (!Directory.Exists(ProgramPath + "/Logs"))
                 Directory.CreateDirectory("./Logs");
-            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("MM")));
-                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("MM"));
+            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy")));
+                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy"));
+            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM")));
+                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM"));
 
             var ConfigFile = File.ReadAllText("./appsetting.json");
             Root App_Config = JsonConvert.DeserializeObject<Root>(ConfigFile);
@@ -141,30 +143,36 @@ namespace Актуализатор_данных
                     string MasterDB_name = App_Config.ParentDatabase.ConnectionString.Split(';')[2].Split('=')[1];
                     string SlaveDB_name = Child.ConnectionString.Split(';')[2].Split('=')[1];
 
-                    //Получем данные родителькой таблицы
-                    NpgsqlDbHelper MasterDB = new NpgsqlDbHelper(App_Config.ParentDatabase.ConnectionString);
                     string Master_table = App_Config.ParentDatabase.Schema + '.' + table;
-                    Master_cols = HF.GetColumns(App_Config.ParentDatabase.ConnectionString, Master_table);
-                    MasterData = MasterDB.GetValues(MasterDB.GetConnection(), Master_table, Master_cols);
-
-                    //Получаем данные дочерней таблицы
-                    NpgsqlDbHelper SlaveDB = new NpgsqlDbHelper(Child.ConnectionString);
                     var Slave_table = Child.Schema + '.' + table;
-                    var Slave_cols = HF.GetColumns(Child.ConnectionString, Slave_table);
-                    var SlaveData = SlaveDB.GetValues(SlaveDB.GetConnection(), Slave_table, Slave_cols);
-                    
-                    //Сравниваем
-                    Logs.Add(HF.TableComparer(MasterData, SlaveData, Master_table, Slave_table, MasterDB_name, SlaveDB_name));
-                    //foreach(var log in Logs)
-                    //    Console.WriteLine(log);
-                    //}
-                    using (StreamWriter writer = new StreamWriter($"./logs/{DateTime.Now.ToString("MM")}/log - {DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("ru-RU"))}.txt"))
+
+                    try
                     {
-                        foreach (string log in Logs)
-                        {
-                            writer.WriteLine(log); // Запись каждой строки
-                        }
+                        //Получем данные родителькой таблицы
+                        NpgsqlDbHelper MasterDB = new NpgsqlDbHelper(App_Config.ParentDatabase.ConnectionString);
+                        Master_cols = HF.GetColumns(App_Config.ParentDatabase.ConnectionString, Master_table);
+                        MasterData = MasterDB.GetValues(MasterDB.GetConnection(), Master_table, Master_cols);
+
+                        //Получаем данные дочерней таблицы
+                        NpgsqlDbHelper SlaveDB = new NpgsqlDbHelper(Child.ConnectionString);
+                        var Slave_cols = HF.GetColumns(Child.ConnectionString, Slave_table);
+                        var SlaveData = SlaveDB.GetValues(SlaveDB.GetConnection(), Slave_table, Slave_cols);
+
+                        Logs.Add(HF.TableComparer(MasterData, SlaveData, Master_table, Slave_table, MasterDB_name, SlaveDB_name));
+                    }             
+                    catch 
+                    {
+                        Logs.Add($"[Error - Error connecting to the database or table]  {MasterDB_name}:{Master_table}-{SlaveDB_name}:{Slave_table}");
                     }
+                    
+                }
+            }
+
+            using (StreamWriter writer = new StreamWriter($"./logs/{DateTime.Now.ToString("yyyy")}/{DateTime.Now.ToString("MM")}/log - {DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("ru-RU"))}.txt"))
+            {
+                foreach (string log in Logs)
+                {
+                    writer.WriteLine(log); // Запись каждой строки
                 }
             }
         }
