@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Npgsql;
 using System.Data;
+using System.Globalization;
 
 namespace Актуализатор_данных
 {
@@ -120,7 +121,13 @@ namespace Актуализатор_данных
             List<string> Logs = new List<string>();
             List<string> tables = new List<string>();
             HelpingFunctions HF = new HelpingFunctions();
-            
+
+            string ProgramPath = Environment.CurrentDirectory;
+            if (!Directory.Exists(ProgramPath + "/Logs"))
+                Directory.CreateDirectory("./Logs");
+            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("MM")));
+                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("MM"));
+
             var ConfigFile = File.ReadAllText("./appsetting.json");
             Root App_Config = JsonConvert.DeserializeObject<Root>(ConfigFile);
 
@@ -133,6 +140,7 @@ namespace Актуализатор_данных
                 {                    
                     string MasterDB_name = App_Config.ParentDatabase.ConnectionString.Split(';')[2].Split('=')[1];
                     string SlaveDB_name = Child.ConnectionString.Split(';')[2].Split('=')[1];
+
                     //Получем данные родителькой таблицы
                     NpgsqlDbHelper MasterDB = new NpgsqlDbHelper(App_Config.ParentDatabase.ConnectionString);
                     string Master_table = App_Config.ParentDatabase.Schema + '.' + table;
@@ -147,9 +155,15 @@ namespace Актуализатор_данных
                     
                     //Сравниваем
                     Logs.Add(HF.TableComparer(MasterData, SlaveData, Master_table, Slave_table, MasterDB_name, SlaveDB_name));
-                    foreach(var log in Logs)
+                    //foreach(var log in Logs)
+                    //    Console.WriteLine(log);
+                    //}
+                    using (StreamWriter writer = new StreamWriter($"./logs/{DateTime.Now.ToString("MM")}/log - {DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("ru-RU"))}.txt"))
                     {
-                        Console.WriteLine(log);
+                        foreach (string log in Logs)
+                        {
+                            writer.WriteLine(log); // Запись каждой строки
+                        }
                     }
                 }
             }
