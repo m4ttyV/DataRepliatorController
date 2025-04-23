@@ -18,7 +18,7 @@ namespace Актуализатор_данных
                 tableName = tableName.Split('.')[1];
                 // Получаем список всех колонок, исключая geometry и geography
                 string columnQuery = $"SELECT column_name FROM information_schema.columns WHERE table_schema = '{schemaName}' " +
-                    $"AND table_name = '{tableName}' AND udt_name NOT IN ('geometry', 'geography')";
+                    $"AND table_name = '{tableName}' AND udt_name NOT IN ('geometry', 'geography');";
 
                 using (var cmd = new NpgsqlCommand(columnQuery, conn))
                 using (var reader = cmd.ExecuteReader())
@@ -86,7 +86,7 @@ namespace Актуализатор_данных
         }
         public DataTable GetValues(NpgsqlConnection conn, string tableName, List<string> columns)
         {            
-            string query = $"SELECT \"{string.Join("\", \"", columns)}\" FROM {tableName}";
+            string query = $"SELECT \"{string.Join("\", \"", columns)}\" FROM {tableName} ORDER BY 1";
             using var cmd = new NpgsqlCommand(query, conn);
             using var reader = cmd.ExecuteReader();
             DataTable table = new DataTable();
@@ -123,12 +123,12 @@ namespace Актуализатор_данных
             HelpingFunctions HF = new HelpingFunctions();
 
             string ProgramPath = Environment.CurrentDirectory;
-            if (!Directory.Exists(ProgramPath + "/Logs"))
-                Directory.CreateDirectory("./Logs");
-            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy")));
-                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy"));
-            if (!Directory.Exists(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM")));
-                Directory.CreateDirectory(ProgramPath + "/Logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM"));
+            if (!Directory.Exists(ProgramPath + "/logs"))
+                Directory.CreateDirectory("./logs");
+            if (!Directory.Exists(ProgramPath + "/logs/" + DateTime.Now.ToString("yyyy")));
+                Directory.CreateDirectory(ProgramPath + "/logs/" + DateTime.Now.ToString("yyyy"));
+            if (!Directory.Exists(ProgramPath + "/logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM")));
+                Directory.CreateDirectory(ProgramPath + "/logs/" + DateTime.Now.ToString("yyyy") + "/" + DateTime.Now.ToString("MM"));
 
             var ConfigFile = File.ReadAllText("./appsetting.json");
             Root App_Config = JsonConvert.DeserializeObject<Root>(ConfigFile);
@@ -168,7 +168,14 @@ namespace Актуализатор_данных
                 }
             }
 
-            using (StreamWriter writer = new StreamWriter($"./logs/{DateTime.Now.ToString("yyyy")}/{DateTime.Now.ToString("MM")}/log - {DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("ru-RU"))}.txt"))
+            using (StreamWriter writer = new StreamWriter($"./logs/{DateTime.Now.ToString("yyyy")}/{DateTime.Now.ToString("MM")}/log-{DateTime.Now.ToString("dd.MM.yyyy", CultureInfo.GetCultureInfo("ru-RU"))}.txt"))
+            {
+                foreach (string log in Logs)
+                {
+                    writer.WriteLine(log); // Запись каждой строки
+                }
+            }
+            using (StreamWriter writer = new StreamWriter($"./logs/log-last.txt"))
             {
                 foreach (string log in Logs)
                 {
